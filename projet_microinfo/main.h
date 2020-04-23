@@ -23,9 +23,9 @@ extern "C" {
 #define KP						800.0f
 #define KI 						3.5f	//must not be zero
 #define MAX_SUM_ERROR 			(MOTOR_SPEED_LIMIT/KI)
-#define D_MAX                   100
+#define D_MAX                   1
 #define STOP                    0
-#define START                   100
+#define START                   250
 
 /** Robot wide IPC bus. */
 extern messagebus_t bus;

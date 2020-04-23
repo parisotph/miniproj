@@ -19,6 +19,8 @@
 #include <process_image.h>
 
 enum etat {TOURNE, POURSUIT, REVIENT};
+static uint8_t Etat = TOURNE;
+static uint16_t speed;
 
 messagebus_t bus;
 MUTEX_DECL(bus_lock);
@@ -65,27 +67,29 @@ int main(void)
 	pi_regulator_start();
 	process_image_start();*/
 
-    VL53L0X_start();
+    //VL53L0X_start();
 
 
 
     /* Infinite loop. */
     while (1) {
-    	uint16_t speed;
-    	uint16_t mesure = 0;
-    	mesure = VL53L0X_get_dist_mm();
-    	chprintf((BaseSequentialStream *)&SD3, "Distance = %d\n", mesure);
-    	//waits 1 second
-    	if(mesure < D_MAX){
-    		speed = STOP;
-    		right_motor_set_speed(speed);
-			left_motor_set_speed(speed);
-    	}
-    	else {
+    	if(Etat == TOURNE){
+    		VL53L0X_start();
     		speed = START;
     		right_motor_set_speed(speed);
     		left_motor_set_speed(-speed);
+    		/*uint16_t mesure = 0;
+    		mesure = VL53L0X_get_dist_mm();
+    		if (mesure < D_MAX){
+    			Etat = POURSUIT;
+    		}*/
     	}
+
+    	/*if(Etat == POURSUIT){
+    		speed = STOP;
+    		right_motor_set_speed(speed);
+    		left_motor_set_speed(speed);
+    	}*/
 
         chThdSleepMilliseconds(1000);
     }
