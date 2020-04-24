@@ -23,9 +23,10 @@ extern "C" {
 #define KP						800.0f
 #define KI 						3.5f	//must not be zero
 #define MAX_SUM_ERROR 			(MOTOR_SPEED_LIMIT/KI)
-#define D_MAX                   1
+#define D_MAX                   100
 #define STOP                    0
 #define START                   250
+#define OMEGA                   34.492
 
 /** Robot wide IPC bus. */
 extern messagebus_t bus;
@@ -33,6 +34,9 @@ extern messagebus_t bus;
 extern parameter_namespace_t parameter_root;
 
 void SendUint8ToComputer(uint8_t* data, uint16_t size);
+
+int16_t get_right_speed(void);
+int16_t get_left_speed(void);
 
 #ifdef __cplusplus
 }

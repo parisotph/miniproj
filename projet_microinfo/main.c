@@ -17,10 +17,18 @@
 
 #include <pi_regulator.h>
 #include <process_image.h>
+#include <odometry.h>
 
 enum etat {TOURNE, POURSUIT, REVIENT};
 static uint8_t Etat = TOURNE;
-static uint16_t speed;
+static uint8_t n = 0;
+static int16_t right_motor_speed;
+static int16_t left_motor_speed;
+static int16_t speed;
+static float angle = 0;
+/*static float var_angle = 0;
+static int32_t r_pos;
+static int32_t l_pos;*/
 
 messagebus_t bus;
 MUTEX_DECL(bus_lock);
@@ -62,37 +70,87 @@ int main(void)
 	po8030_start();*/
 	//inits the motors
 	motors_init();
+	//odometry_start();
 
 	/*//stars the threads for the pi regulator and the processing of the image
 	pi_regulator_start();
 	process_image_start();*/
 
-    //VL53L0X_start();
+	VL53L0X_start();
 
 
 
     /* Infinite loop. */
     while (1) {
-    	if(Etat == TOURNE){
-    		VL53L0X_start();
-    		speed = START;
-    		right_motor_set_speed(speed);
-    		left_motor_set_speed(-speed);
-    		/*uint16_t mesure = 0;
-    		mesure = VL53L0X_get_dist_mm();
-    		if (mesure < D_MAX){
-    			Etat = POURSUIT;
-    		}*/
-    	}
 
-    	/*if(Etat == POURSUIT){
+
+    	if(Etat == TOURNE){
+
+    			uint16_t mesure;
+    			mesure = VL53L0X_get_dist_mm();
+    			chprintf((BaseSequentialStream *)&SD3, "Distance = %d\n", mesure);
+
+    	    //if(Etat == TOURNE){
+    		//int16_t angle = 0;
+
+    		if(mesure < D_MAX) {
+    			//int16_t teta0;
+    			//teta0 = angle;
+    			if(n){
+    				Etat = POURSUIT;
+    			}
+    			else{
+    				n = 1;
+    			}
+    		}
+    		else{
+    			speed = START;
+    			right_motor_set_speed(speed);
+    			left_motor_set_speed(-speed);
+    		}
+    		}
+    		if(Etat == POURSUIT){
+    			speed = STOP;
+    			right_motor_set_speed(speed);
+    			left_motor_set_speed(speed);
+    			//angle = get_teta();
+
+    		}
+    		/*else{
+    			Etat = TOURNE;
+    		}*/
+    		/*else{
+    			speed = START;
+    			right_motor_set_speed(speed);
+    			left_motor_set_speed(-speed);
+    		}
+    	}
+    	else{
     		speed = STOP;
     		right_motor_set_speed(speed);
     		left_motor_set_speed(speed);
     	}*/
 
-        chThdSleepMilliseconds(1000);
+    	/*speed = START;
+    	right_motor_set_speed(speed);
+    	left_motor_set_speed(-speed);
+    	r_pos = right_motor_get_pos();
+    	l_pos = left_motor_get_pos();
+
+    	/*if (angle > 360){
+    		angle = 0;
+    	}*/
+    	chprintf((BaseSequentialStream *)&SD3, "Etat = %d\n", Etat);
+    	chThdSleepMilliseconds(1000);
     }
+}
+
+int16_t get_right_speed(void){
+	return right_motor_speed;
+}
+
+int16_t get_left_speed(void){
+	return left_motor_speed;
 }
 
 #define STACK_CHK_GUARD 0xe2dee396
@@ -102,3 +160,4 @@ void __stack_chk_fail(void)
 {
     chSysHalt("Stack smashing detected");
 }
+
