@@ -9,7 +9,6 @@ extern "C" {
 #include "msgbus/messagebus.h"
 #include "parameter/parameter.h"
 
-
 //constants for the differents parts of the project
 #define IMAGE_BUFFER_SIZE		640
 #define WIDTH_SLOPE				5
@@ -25,8 +24,10 @@ extern "C" {
 #define MAX_SUM_ERROR 			(MOTOR_SPEED_LIMIT/KI)
 #define D_MAX                   100
 #define STOP                    0
-#define START                   250
+#define V_TURN                  250
 #define OMEGA                   34.492
+
+enum etat {TURN, PURSUIT, COMEBACK};
 
 /** Robot wide IPC bus. */
 extern messagebus_t bus;
