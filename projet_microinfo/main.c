@@ -52,9 +52,9 @@ int main(void)
     i2c_start();
     //start the USB communication
     usb_start();
-    /*//starts the camera
+    //starts the camera
     dcmi_start();
-	po8030_start();*/
+	po8030_start();
 	//inits the motors
 	motors_init();
 	//odometry_start();
@@ -62,7 +62,7 @@ int main(void)
 
 	//stars the threads for the pi regulator and the processing of the image
 	pi_regulator_start();
-	//process_image_start();*/
+	process_image_start();
 
 
 	VL53L0X_start();
@@ -74,13 +74,13 @@ int main(void)
 	messagebus_topic_t *sensor_topic = messagebus_find_topic_blocking(&bus, "/sensor");
 	sensor_msg_t sensor_value;*/
 
-	uint16_t distance;
+	//uint16_t distance;
 
     /* Infinite loop. */
     while (1) {
 
-    	distance = get_measure();
-    	chprintf((BaseSequentialStream *)&SD3, "dist = %d<n", distance);
+    	//distance = get_measure();
+    	//chprintf((BaseSequentialStream *)&SD3, "dist = %d<n", distance);
 
     	chThdSleepMilliseconds(100);
     }
