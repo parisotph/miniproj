@@ -10,13 +10,14 @@
 #include <pi_regulator.h>
 #include <process_image.h>
 #include <VL53L0X.h>
+#include <odometry.h>
 
 //static uint8_t system_state = TURN;
-static uint16_t mesure;
+static uint8_t target_captured;
+//static uint8_t target_out_range;
 static int16_t left_speed;
 static int16_t right_speed;
 static uint8_t system_state = TURN;
-static uint8_t first_time
 
 
 
@@ -42,6 +43,14 @@ int16_t pi_regulator(float distance, float goal){
 	if(fabs(error) < ERROR_THRESHOLD || error < 0){
 		return 0;
 	}
+
+	if(error < CAUGHT){
+		target_captured = 1;
+	}
+
+	/*if(error > OUT_RANGE){
+		target_out_range = 1;
+	}*/
 
 	sum_error += error;
 
@@ -69,8 +78,10 @@ static THD_FUNCTION(PiRegulator, arg) {
     int16_t speed_correction;
     systime_t time;
     uint8_t n= 0;
-
-    uint8_t first_time = 0;
+    uint16_t mesure;
+    uint8_t dist_reached;
+    uint8_t angle_reached;
+	uint8_t origin_reached;
 
     while(1){
     	time = chVTGetSystemTime();
@@ -96,15 +107,16 @@ static THD_FUNCTION(PiRegulator, arg) {
     				//stop_robot()
     			}
     			else{
-    				right_speed = S_TURN;
-    				left_speed = S_TURN;
+    				right_speed = CST_SPEED;
+    				left_speed = -CST_SPEED;
     				set_robot(right_speed, left_speed);
     			}
     	}
 
 
     	if(system_state == PURSUIT){
-    				if(d_reached){
+    				dist_reached = get_dist_condition();
+    				if(dist_reached){
     					right_speed = STOP;
     					left_speed = STOP;
     					set_robot(right_speed, left_speed);
@@ -128,22 +140,25 @@ static THD_FUNCTION(PiRegulator, arg) {
     	}
 
 
-    	if (state == COMEBACK) {
-    	    if(angle_reached){
+    	if(system_state == COMEBACK){
+    	    angle_reached = get_angle_condition();
+    		if(angle_reached){
+    			origin_reached = get_origin_condition();
     	        if(origin_reached) {
     	            right_speed = STOP;
     	            left_speed = STOP;
     	            set_robot(right_speed, left_speed);
-    	            state = TURN;
-    	            set_first_time(first_time);
+    	            reset_odometry();
+    	            reset_pursuit();
+    	            system_state = TURN;
     	        } else {
-    	            right_speed = C_SPEED;
-    	            left_speed = C_SPEED;
+    	            right_speed = CST_SPEED;
+    	            left_speed = CST_SPEED;
     	            set_robot(right_speed, left_speed);
     	        }
     	    } else {
-    	        right_speed = S_TURN;
-    	        left_speed = S_TURN;
+    	        right_speed = CST_SPEED;
+    	        left_speed = -CST_SPEED;
     	        set_robot(right_speed, left_speed);
     	    }
     	}
@@ -171,5 +186,18 @@ int16_t get_left_speed(void){
 
 uint8_t get_system_state(void){
 		return system_state;
+}
+
+uint8_t get_target_situation(void){
+	return target_captured;
+}
+
+/*uint8_t get_pursuit_situation(void){
+	return target_out_range;
+}*/
+
+void reset_pursuit(void){
+	target_captured = 0;
+	//target_out_range = 0;
 }
 

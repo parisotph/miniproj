@@ -12,4 +12,10 @@ int16_t get_left_speed(void);
 
 uint8_t get_system_state(void);
 
+uint8_t get_target_situation(void);
+
+/*uint8_t get_pursuit_situation(void);*/
+
+void reset_pursuit(void);
+
 #endif /* PI_REGULATOR_H */

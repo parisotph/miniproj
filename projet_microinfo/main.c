@@ -17,6 +17,7 @@
 
 #include <pi_regulator.h>
 #include <process_image.h>
+#include <odometry.c>
 
 
 
@@ -63,6 +64,7 @@ int main(void)
 	//stars the threads for the pi regulator and the processing of the image
 	pi_regulator_start();
 	process_image_start();
+	odometry_start();
 
 
 	VL53L0X_start();
@@ -74,15 +76,17 @@ int main(void)
 	messagebus_topic_t *sensor_topic = messagebus_find_topic_blocking(&bus, "/sensor");
 	sensor_msg_t sensor_value;*/
 
-	//uint16_t distance;
+	int16_t sr, sl;
 
     /* Infinite loop. */
     while (1) {
 
     	//distance = get_measure();
-    	//chprintf((BaseSequentialStream *)&SD3, "dist = %d<n", distance);
+    	sr = get_right_speed();
+    	sl = get_left_speed();
+    	chprintf((BaseSequentialStream *)&SD3, "Vitesse droite = %d Vitesse gauche = %d\n", sr, sl);
 
-    	chThdSleepMilliseconds(100);
+    	chThdSleepMilliseconds(1000);
     }
 }
 

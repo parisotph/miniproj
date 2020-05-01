@@ -24,8 +24,14 @@ extern "C" {
 #define MAX_SUM_ERROR 			(MOTOR_SPEED_LIMIT/KI)
 #define D_MAX                   100
 #define STOP                    0
-#define V_TURN                  250
-#define OMEGA                   34.492
+#define CST_SPEED               250
+#define DEUX_PI                 6.283185307
+#define PI                      3.121592654
+#define T_FACTOR                0.0000005
+#define FACTOR                  0.000000002407
+#define NEAR_ORIGIN             0.0000065
+#define CAUGHT                  -7.0f
+#define PERIMETER_RADIUS        30.0f
 
 enum etat {TURN, PURSUIT, COMEBACK};
 
