@@ -76,15 +76,19 @@ int main(void)
 	messagebus_topic_t *sensor_topic = messagebus_find_topic_blocking(&bus, "/sensor");
 	sensor_msg_t sensor_value;*/
 
-	int16_t sr, sl;
+	//int16_t sr, sl;
+	//int16_t r_pos, l_pos;
+	float teta;
 
     /* Infinite loop. */
     while (1) {
 
     	//distance = get_measure();
-    	sr = get_right_speed();
-    	sl = get_left_speed();
-    	chprintf((BaseSequentialStream *)&SD3, "Vitesse droite = %d Vitesse gauche = %d\n", sr, sl);
+    	/*sr = get_right_speed();
+    	sl = get_left_speed();*/
+    	teta = get_teta();
+
+    	chprintf((BaseSequentialStream *)&SD3, "teta = %f\n", teta);
 
     	chThdSleepMilliseconds(1000);
     }

@@ -25,12 +25,11 @@ extern "C" {
 #define D_MAX                   100
 #define STOP                    0
 #define CST_SPEED               250
-#define DEUX_PI                 6.283185307
-#define PI                      3.121592654
-#define T_FACTOR                0.0000005
-#define FACTOR                  0.000000002407
-#define NEAR_ORIGIN             0.0000065
-#define CAUGHT                  -7.0f
+#define PI                      3.141592654f
+#define POS_FACTOR              0.0065f
+#define TETA_FACTOR             0.002407f
+#define NEAR_ORIGIN             0.013f
+#define CAUGHT                  7.0f
 #define PERIMETER_RADIUS        30.0f
 
 enum etat {TURN, PURSUIT, COMEBACK};

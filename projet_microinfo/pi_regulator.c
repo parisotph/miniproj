@@ -44,7 +44,7 @@ int16_t pi_regulator(float distance, float goal){
 		return 0;
 	}
 
-	if(error < CAUGHT){
+	if(error < -CAUGHT){
 		target_captured = 1;
 	}
 
@@ -85,104 +85,72 @@ static THD_FUNCTION(PiRegulator, arg) {
 
     while(1){
     	time = chVTGetSystemTime();
-
     	mesure = VL53L0X_get_dist_mm();
 
-
-
     	if(system_state == TURN){
-    			if(mesure < D_MAX){
-    			//system_state = PURSUIT;
-    				if(n >= 50){
-    					right_speed = STOP;
-    					left_speed = STOP;
-    					set_robot(right_speed, left_speed);
-    					system_state = PURSUIT;
-    				}
-
-    				else{
-    					n++;
-    				}
-
-    				//stop_robot()
+    		if(mesure < D_MAX){
+    			if(n == 50){
+    				set_robot(STOP, STOP);
+    				system_state = PURSUIT;
     			}
     			else{
-    				right_speed = CST_SPEED;
-    				left_speed = -CST_SPEED;
-    				set_robot(right_speed, left_speed);
+    				n++;
     			}
+    		}
+    		else{
+    			set_robot(CST_SPEED, -CST_SPEED);
+    		}
     	}
-
-
     	if(system_state == PURSUIT){
-    				dist_reached = get_dist_condition();
-    				if(dist_reached){
-    					right_speed = STOP;
-    					left_speed = STOP;
-    					set_robot(right_speed, left_speed);
-    					system_state = COMEBACK;
-    				}
-    				else{
-						//computes the speed to give to the motors
-						//distance_cm is modified by the image processing thread
-						speed = pi_regulator(get_distance_cm(), GOAL_DISTANCE);
-						//computes a correction factor to let the robot rotate to be in front of the line
-						speed_correction = (get_line_position() - (IMAGE_BUFFER_SIZE/2));
-
-						//if the line is nearly in front of the camera, don't rotate
-						if(abs(speed_correction) < ROTATION_THRESHOLD){
-							speed_correction = 0;
-						}
-						right_speed = speed - ROTATION_COEFF * speed_correction;
-						left_speed = speed + ROTATION_COEFF * speed_correction;
-						set_robot(right_speed, left_speed);
-    				}
+    		/*dist_reached = get_dist_condition();
+    		if(dist_reached){
+    			set_robot(STOP, STOP);
+    			//system_state = COMEBACK;
+    		}
+    		else{*/
+    			speed = pi_regulator(get_distance_cm(), GOAL_DISTANCE);
+    			speed_correction = (get_line_position() - (IMAGE_BUFFER_SIZE/2));
+    			if(abs(speed_correction) < ROTATION_THRESHOLD){
+    				speed_correction = 0;
+    			}
+    			right_speed = speed - ROTATION_COEFF * speed_correction;
+    			left_speed = speed + ROTATION_COEFF * speed_correction;
+    			set_robot(right_speed, left_speed);
+    		//}
     	}
-
-
-    	if(system_state == COMEBACK){
-    	    angle_reached = get_angle_condition();
+    	/*if(system_state == COMEBACK){
+    		angle_reached = get_angle_condition();
     		if(angle_reached){
     			origin_reached = get_origin_condition();
-    	        if(origin_reached) {
-    	            right_speed = STOP;
-    	            left_speed = STOP;
-    	            set_robot(right_speed, left_speed);
-    	            reset_odometry();
-    	            reset_pursuit();
-    	            system_state = TURN;
-    	        } else {
-    	            right_speed = CST_SPEED;
-    	            left_speed = CST_SPEED;
-    	            set_robot(right_speed, left_speed);
-    	        }
-    	    } else {
-    	        right_speed = CST_SPEED;
-    	        left_speed = -CST_SPEED;
-    	        set_robot(right_speed, left_speed);
-    	    }
-    	}
-
-    	//chprintf((BaseSequentialStream *)&SD3, "dist = %d<n", system_state);
-
+    			if(origin_reached){
+    				set_robot(STOP, STOP);
+    				reset_odometry();
+    				reset_pursuit();
+    				system_state = TURN;
+    			}
+    			else{
+    				set_robot(CST_SPEED, CST_SPEED);
+    			}
+    		}
+    		else{
+    			set_robot(CST_SPEED, -CST_SPEED);
+    		}
+    	}*/
     	chThdSleepUntilWindowed(time, time + MS2ST(10));
     }
-
-        //100Hz
-        //chThdSleepUntilWindowed(time, time + MS2ST(10));
 }
 
 void pi_regulator_start(void){
 	chThdCreateStatic(waPiRegulator, sizeof(waPiRegulator), NORMALPRIO, PiRegulator, NULL);
 }
 
-int16_t get_right_speed(void){
+/*int16_t get_right_speed(void){
 	return right_speed;
 }
 
 int16_t get_left_speed(void){
 	return left_speed;
-}
+}*/
 
 uint8_t get_system_state(void){
 		return system_state;
