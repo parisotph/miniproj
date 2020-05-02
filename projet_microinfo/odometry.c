@@ -27,6 +27,7 @@ static int32_t delta;
 	dyc = dc * cos(dteta);
 }*/
 
+// update the angle of the robot
 void update_robot(void){
 	teta += dteta;
 	if(teta >= 2*PI){
@@ -54,51 +55,50 @@ static THD_FUNCTION(Odometry, arg) {
     int16_t position_l;
     //float r_pos, l_pos;
 
-
     systime_t time;
 
     while(1){
-    	time = chVTGetSystemTime();
-    	position_r = right_motor_get_pos();
-    	position_l = left_motor_get_pos();
-    	delta = position_r - position_l;
-    	dteta = TETA_FACTOR * delta;
-    	right_motor_set_pos(0);
-    	left_motor_set_pos(0);
-    	/*dc = POS_FACTOR * (right_motor_get_pos()+left_motor_get_pos());
-    	dxc = -dc*sin(dteta);
-    	dyc = dc*cos(dteta);
-    	right_motor_set_pos(0);
-    	left_motor_set_pos(0);*/
-    	state = get_system_state();
+    		time = chVTGetSystemTime();
+    		position_r = right_motor_get_pos();
+    		position_l = left_motor_get_pos();
+    		delta = position_r - position_l;
+    		dteta = TETA_FACTOR * delta;
+    		right_motor_set_pos(0);
+    		left_motor_set_pos(0);
+    		/*dc = POS_FACTOR * (right_motor_get_pos()+left_motor_get_pos());
+    		dxc = -dc*sin(dteta);
+    		dyc = dc*cos(dteta);
+    		right_motor_set_pos(0);
+    		left_motor_set_pos(0);*/
+    		state = get_system_state();
 
-    	if(state == TURN){
-    		update_robot();
-    	}
-
-    	if(state == PURSUIT){
-    		/*target_captured = get_target_situation();
-    		if(dist >= PERIMETER_RADIUS || target_captured){
-    			phi = atan(yc/xc);
-    			turn_angle = PI + phi - teta;
-    			dist_reached = 1;
-    		}
-    		else{*/
+    		if(state == TURN){
     			update_robot();
-    		//}
-    	}
+    		}
 
-    	/*if(state == COMEBACK){
-    		update_robot();
-    		if(teta >= turn_angle){
-    			angle_reached = 1;
+    		if(state == PURSUIT){
+    			/*target_captured = get_target_situation();
+    			if(dist >= PERIMETER_RADIUS || target_captured){
+    				phi = atan(yc/xc);
+    				turn_angle = PI + phi - teta;
+    				dist_reached = 1;
+    			}
+    			else{*/
+    				update_robot();
+    				//}
     		}
-    		if(dist <= NEAR_ORIGIN){
-    			origin_reached = 1;
-    		}
-    	}*/
+
+    		/*if(state == COMEBACK){
+    			update_robot();
+    			if(teta >= turn_angle){
+    				angle_reached = 1;
+    			}
+    			if(dist <= NEAR_ORIGIN){
+    				origin_reached = 1;
+    			}
+    		}*/
     	// 1 kHz
-    	chThdSleepUntilWindowed(time, time + MS2ST(4));
+    		chThdSleepUntilWindowed(time, time + MS2ST(4));
     }
 }
 

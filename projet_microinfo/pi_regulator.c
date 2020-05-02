@@ -40,6 +40,8 @@ int16_t pi_regulator(float distance, float goal){
 	//disables the PI regulator if the error is to small
 	//this avoids to always move as we cannot exactly be where we want and 
 	//the camera is a bit noisy
+
+	//We don't want the robot to stop at a certain distance but we want it to touch the object
 	if(fabs(error) < ERROR_THRESHOLD || error < 0){
 		return 0;
 	}
@@ -84,59 +86,60 @@ static THD_FUNCTION(PiRegulator, arg) {
 	uint8_t origin_reached;
 
     while(1){
-    	time = chVTGetSystemTime();
-    	mesure = VL53L0X_get_dist_mm();
+    		time = chVTGetSystemTime();
+    		mesure = VL53L0X_get_dist_mm();
 
-    	if(system_state == TURN){
-    		if(mesure < D_MAX){
-    			if(n == 50){
-    				set_robot(STOP, STOP);
-    				system_state = PURSUIT;
+    		//If an object is close enough, the robot stops rotating and starts pursuing the object
+    		if(system_state == TURN){
+    			if(mesure < D_MAX){
+    				if(n == 50){
+    					set_robot(STOP, STOP);
+    					system_state = PURSUIT;
+    				}
+    				else{
+    					n++;
+    				}
     			}
     			else{
-    				n++;
+    				set_robot(CST_SPEED, -CST_SPEED);
     			}
     		}
-    		else{
-    			set_robot(CST_SPEED, -CST_SPEED);
-    		}
-    	}
-    	if(system_state == PURSUIT){
-    		/*dist_reached = get_dist_condition();
-    		if(dist_reached){
-    			set_robot(STOP, STOP);
-    			//system_state = COMEBACK;
-    		}
-    		else{*/
-    			speed = pi_regulator(get_distance_cm(), GOAL_DISTANCE);
-    			speed_correction = (get_line_position() - (IMAGE_BUFFER_SIZE/2));
-    			if(abs(speed_correction) < ROTATION_THRESHOLD){
-    				speed_correction = 0;
-    			}
-    			right_speed = speed - ROTATION_COEFF * speed_correction;
-    			left_speed = speed + ROTATION_COEFF * speed_correction;
-    			set_robot(right_speed, left_speed);
-    		//}
-    	}
-    	/*if(system_state == COMEBACK){
-    		angle_reached = get_angle_condition();
-    		if(angle_reached){
-    			origin_reached = get_origin_condition();
-    			if(origin_reached){
+    		if(system_state == PURSUIT){
+    			/*dist_reached = get_dist_condition();
+    			if(dist_reached){
     				set_robot(STOP, STOP);
-    				reset_odometry();
-    				reset_pursuit();
-    				system_state = TURN;
+    				//system_state = COMEBACK;
+    			}
+    			else{*/
+    				speed = pi_regulator(get_distance_cm(), GOAL_DISTANCE);
+    				speed_correction = (get_line_position() - (IMAGE_BUFFER_SIZE/2));
+    				if(abs(speed_correction) < ROTATION_THRESHOLD){
+    					speed_correction = 0;
+    				}
+    				right_speed = speed - ROTATION_COEFF * speed_correction;
+    				left_speed = speed + ROTATION_COEFF * speed_correction;
+    				set_robot(right_speed, left_speed);
+    				//}
+    		}
+    		/*if(system_state == COMEBACK){
+    			angle_reached = get_angle_condition();
+    			if(angle_reached){
+    				origin_reached = get_origin_condition();
+    				if(origin_reached){
+    					set_robot(STOP, STOP);
+    					reset_odometry();
+    					reset_pursuit();
+    					system_state = TURN;
+    				}
+    				else{
+    					set_robot(CST_SPEED, CST_SPEED);
+    				}
     			}
     			else{
-    				set_robot(CST_SPEED, CST_SPEED);
+    				set_robot(CST_SPEED, -CST_SPEED);
     			}
-    		}
-    		else{
-    			set_robot(CST_SPEED, -CST_SPEED);
-    		}
-    	}*/
-    	chThdSleepUntilWindowed(time, time + MS2ST(10));
+    		}*/
+    		chThdSleepUntilWindowed(time, time + MS2ST(10));
     }
 }
 

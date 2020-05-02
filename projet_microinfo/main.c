@@ -17,9 +17,7 @@
 
 #include <pi_regulator.h>
 #include <process_image.h>
-#include <odometry.c>
-
-
+#include <odometry.h>
 
 
 void SendUint8ToComputer(uint8_t* data, uint16_t size) 
@@ -66,7 +64,6 @@ int main(void)
 	process_image_start();
 	odometry_start();
 
-
 	VL53L0X_start();
 	//move_start();
 
@@ -83,14 +80,14 @@ int main(void)
     /* Infinite loop. */
     while (1) {
 
-    	//distance = get_measure();
-    	/*sr = get_right_speed();
-    	sl = get_left_speed();*/
-    	teta = get_teta();
+    		//distance = get_measure();
+    		/*sr = get_right_speed();
+    		sl = get_left_speed();*/
+    		teta = get_teta();
 
-    	chprintf((BaseSequentialStream *)&SD3, "teta = %f\n", teta);
+    		chprintf((BaseSequentialStream *)&SD3, "teta = %f\n", teta);
 
-    	chThdSleepMilliseconds(1000);
+    		chThdSleepMilliseconds(1000);
     }
 }
 
