@@ -26,6 +26,10 @@ float get_teta(void);
 
 float get_dteta(void);
 
+float get_xc(void);
+
+float get_yc(void);
+
 int32_t get_delta(void);
 
 int32_t get_delta_r_pos(void);

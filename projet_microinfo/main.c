@@ -62,10 +62,10 @@ int main(void)
 
 	//stars the threads for the pi regulator and the processing of the image
 	pi_regulator_start();
-	//process_image_start();
+	process_image_start();
 	odometry_start();
 
-	//VL53L0X_start();
+	VL53L0X_start();
 	//playMelodyStart();
 	//move_start();
 
@@ -74,14 +74,14 @@ int main(void)
 
 	messagebus_topic_t *sensor_topic = messagebus_find_topic_blocking(&bus, "/sensor");
 	sensor_msg_t sensor_value;*/
-
-	float angle;
-	//int32_t delta_r_pos, delta_l_pos, delta;
+	uint8_t state, angle_reached, origin_reached;
     /* Infinite loop. */
     while (1) {
 
-    		angle = get_teta();
-    		chprintf((BaseSequentialStream *)&SD3, "angle = %f\n", angle);
+    		state = get_system_state();
+    		angle_reached = get_angle_condition();
+    		origin_reached = get_origin_condition();
+    		chprintf((BaseSequentialStream *)&SD3, "state = %d    angle_reached = %d origin_reached = %d\n", state, angle_reached, origin_reached);
     		chThdSleepMilliseconds(1000);
 
     }

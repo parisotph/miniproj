@@ -72,8 +72,41 @@ static THD_FUNCTION(Odometry, arg) {
 
     while(1){
     		time = chVTGetSystemTime();
+
+    		state = get_system_state();
     		variation_calcul();
-    		update_robot();
+
+    		switch(state){
+
+    		case TURN:
+    			update_robot();
+    		break;
+
+    		case PURSUIT:
+    			target_captured = get_target_situation();
+    			if(dist >= PERIMETER_RADIUS || target_captured){
+    				phi = atan(yc/xc);
+    				turn_angle = PI + phi - teta;
+    				dist_reached = ACHIEVE;
+    			}
+    			else{
+    				update_robot();
+    			}
+    		break;
+
+    		case COMEBACK:
+    			update_robot();
+    			if(teta >= turn_angle){
+    				angle_reached = ACHIEVE;
+    			}
+    			if(dist <= NEAR_ORIGIN){
+    				origin_reached = ACHIEVE;
+    			}
+    		break;
+
+    		default:
+    			error_invalid_state();
+    		}
 
 
     	// 1 kHz
@@ -108,6 +141,14 @@ float get_dist(void){
 
 float get_dteta(void){
 	return dteta;
+}
+
+float get_xc(void){
+	return xc;
+}
+
+float get_yc(void){
+	return yc;
 }
 
 int32_t get_delta(void){

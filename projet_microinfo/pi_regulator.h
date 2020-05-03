@@ -18,4 +18,6 @@ uint8_t get_target_situation(void);
 
 void reset_pursuit(void);
 
+void error_invalid_state(void);
+
 #endif /* PI_REGULATOR_H */

@@ -48,7 +48,7 @@ int16_t pi_regulator(float distance, float goal){
 	}
 
 	if(error < -CAUGHT){
-		target_captured = 1;
+		target_captured = ACHIEVE;
 	}
 
 	/*if(error > OUT_RANGE){
@@ -80,7 +80,7 @@ static THD_FUNCTION(PiRegulator, arg) {
     int16_t speed = 0;
     int16_t speed_correction;
     systime_t time;
-    uint8_t n= 0;
+    uint16_t n= 0;
     uint16_t mesure;
     uint8_t dist_reached;
     uint8_t angle_reached;
@@ -88,10 +88,69 @@ static THD_FUNCTION(PiRegulator, arg) {
 
     while(1){
     		time = chVTGetSystemTime();
+    		mesure = VL53L0X_get_dist_mm();
 
-    		set_robot(CST_SPEED, -CST_SPEED);
+    		switch(system_state){
 
-    		chThdSleepUntilWindowed(time, time + MS2ST(10));
+    		case TURN:
+    			if(mesure < D_MAX){
+    				if(n == 500){
+    					//set_robot(STOP, STOP);
+    					system_state = PURSUIT;
+    				}
+    				else{
+    					n++;
+    				}
+    			}
+    			else{
+    				//set_robot(CST_SPEED, -CST_SPEED);
+    				set_robot(STOP, STOP);
+    			}
+    		break;
+
+    		case PURSUIT:
+    			dist_reached = get_dist_condition();
+    			if(dist_reached){
+    				set_robot(STOP, STOP);
+    				system_state = COMEBACK;
+    			}
+    			else{
+    				speed = pi_regulator(get_distance_cm(), GOAL_DISTANCE);
+    				/*speed_correction = (get_line_position() - (IMAGE_BUFFER_SIZE/2));
+    				if(abs(speed_correction) < ROTATION_THRESHOLD){
+    					speed_correction = 0;
+    				}
+    				right_speed = speed - ROTATION_COEFF * speed_correction;
+    				left_speed = speed + ROTATION_COEFF * speed_correction;
+    				set_robot(right_speed, left_speed);*/
+    				set_robot(speed, speed);
+    			}
+    		break;
+
+    		case COMEBACK:
+    			angle_reached = get_angle_condition();
+    			if(angle_reached){
+    				origin_reached = get_origin_condition();
+    				if(origin_reached){
+    					set_robot(STOP, STOP);
+    					//system_state = TURN;
+    					//reset_odometry();
+    					//reset_pursuit();
+    				}
+    				else{
+    					set_robot(CST_SPEED, CST_SPEED);
+    				}
+    			}
+    			else{
+    				set_robot(CST_SPEED, -CST_SPEED);
+    			}
+    		break;
+
+    		default:
+    			error_invalid_state();
+    		}
+
+    		chThdSleepUntilWindowed(time, time + MS2ST(1));
     }
 }
 
@@ -122,5 +181,9 @@ uint8_t get_target_situation(void){
 void reset_pursuit(void){
 	target_captured = 0;
 	//target_out_range = 0;
+}
+
+void error_invalid_state(void){
+	set_robot(STOP, STOP);
 }
 

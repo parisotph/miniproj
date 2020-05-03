@@ -30,9 +30,10 @@ extern "C" {
 #define PI                      3.141592654f
 #define POS_FACTOR              0.0065f
 #define TETA_FACTOR             0.002407f
-#define NEAR_ORIGIN             0.013f
+#define NEAR_ORIGIN             0.1f
 #define CAUGHT                  7.0f
 #define PERIMETER_RADIUS        30.0f
+#define ACHIEVE                 1
 
 enum etat {TURN, PURSUIT, COMEBACK};
 
