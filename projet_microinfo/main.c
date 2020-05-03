@@ -11,8 +11,8 @@
 #include <motors.h>
 #include <camera/po8030.h>
 #include <chprintf.h>
-#include <VL53L0X.h>
-#include <messagebus.h>
+//#include <VL53L0X.h>
+//#include <messagebus.h>
 #include <i2c_bus.h>
 
 #include <pi_regulator.h>
@@ -49,6 +49,7 @@ int main(void)
     //starts the serial communication
     serial_start();
     i2c_start();
+    dac_start();
     //start the USB communication
     usb_start();
     //starts the camera
@@ -61,10 +62,11 @@ int main(void)
 
 	//stars the threads for the pi regulator and the processing of the image
 	pi_regulator_start();
-	process_image_start();
+	//process_image_start();
 	odometry_start();
 
-	VL53L0X_start();
+	//VL53L0X_start();
+	//playMelodyStart();
 	//move_start();
 
 	/** Inits the Inter Process Communication bus. */
@@ -73,21 +75,15 @@ int main(void)
 	messagebus_topic_t *sensor_topic = messagebus_find_topic_blocking(&bus, "/sensor");
 	sensor_msg_t sensor_value;*/
 
-	//int16_t sr, sl;
-	//int16_t r_pos, l_pos;
-	float teta;
-
+	float angle;
+	//int32_t delta_r_pos, delta_l_pos, delta;
     /* Infinite loop. */
     while (1) {
 
-    		//distance = get_measure();
-    		/*sr = get_right_speed();
-    		sl = get_left_speed();*/
-    		teta = get_teta();
-
-    		chprintf((BaseSequentialStream *)&SD3, "teta = %f\n", teta);
-
+    		angle = get_teta();
+    		chprintf((BaseSequentialStream *)&SD3, "angle = %f\n", angle);
     		chThdSleepMilliseconds(1000);
+
     }
 }
 

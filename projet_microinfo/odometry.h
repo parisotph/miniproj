@@ -8,7 +8,7 @@
 #ifndef ODOMETRY_H_
 #define ODOMETRY_H_
 
-/*void variation_calcul(int16_t s_r, int16_t s_l);*/
+void variation_calcul(void);
 
 void update_robot(void);
 
@@ -27,6 +27,14 @@ float get_teta(void);
 float get_dteta(void);
 
 int32_t get_delta(void);
+
+int32_t get_delta_r_pos(void);
+
+int32_t get_delta_l_pos(void);
+
+int32_t get_last_r_pos(void);
+
+int32_t get_last_l_pos(void);
 
 void reset_odometry(void);
 

@@ -8,6 +8,8 @@ extern "C" {
 #include "camera/dcmi_camera.h"
 #include "msgbus/messagebus.h"
 #include "parameter/parameter.h"
+#include "sensors/VL53L0X/VL53L0X.h"
+#include "audio/play_melody.h"
 
 //constants for the differents parts of the project
 #define IMAGE_BUFFER_SIZE		640
@@ -41,8 +43,8 @@ extern parameter_namespace_t parameter_root;
 
 void SendUint8ToComputer(uint8_t* data, uint16_t size);
 
-int16_t get_right_speed(void);
-int16_t get_left_speed(void);
+/*int16_t get_right_speed(void);
+int16_t get_left_speed(void);*/
 
 #ifdef __cplusplus
 }
