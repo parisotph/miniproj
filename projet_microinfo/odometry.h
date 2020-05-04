@@ -20,7 +20,7 @@ uint8_t get_angle_condition(void);
 
 uint8_t get_origin_condition(void);
 
-float get_dist(void);
+/*float get_dist(void);
 
 float get_teta(void);
 
@@ -28,7 +28,7 @@ float get_dteta(void);
 
 float get_xc(void);
 
-float get_yc(void);
+float get_yc(void);*/
 
 int32_t get_delta(void);
 
@@ -41,5 +41,7 @@ int32_t get_last_r_pos(void);
 int32_t get_last_l_pos(void);
 
 void reset_odometry(void);
+
+void reset_map(void);
 
 #endif /* ODOMETRY_H_ */

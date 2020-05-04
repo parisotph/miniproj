@@ -12,6 +12,7 @@
 //#include <VL53L0X.h>
 #include <odometry.h>
 #include "sensors/VL53L0X/VL53L0X.h"
+#include "audio/play_melody.h"
 
 //static uint8_t system_state = TURN;
 static uint8_t target_captured;
@@ -81,49 +82,60 @@ static THD_FUNCTION(PiRegulator, arg) {
     int16_t speed_correction;
     systime_t time;
     uint16_t n= 0;
-    uint16_t mesure;
+    uint16_t first_measure;
+    uint16_t second_measure;
     uint8_t dist_reached;
     uint8_t angle_reached;
 	uint8_t origin_reached;
+	uint8_t line_not_found;
 
     while(1){
     		time = chVTGetSystemTime();
-    		mesure = VL53L0X_get_dist_mm();
+    		first_measure = VL53L0X_get_dist_mm();
 
     		switch(system_state){
 
     		case TURN:
-    			if(mesure < D_MAX){
+    			if(first_measure < D_MAX){
     				if(n == 500){
-    					//set_robot(STOP, STOP);
-    					system_state = PURSUIT;
+    					set_robot(STOP, STOP);
+    					playNote(9, 200);
+    					chThdSleepMilliseconds(WAIT_TIME);
+    					second_measure = VL53L0X_get_dist_mm();
+    					if(second_measure <= D_MAX){
+    						system_state = PURSUIT;
+    					}
+    					else{
+    						set_robot(CST_SPEED, -CST_SPEED);
+    					}
     				}
     				else{
     					n++;
     				}
     			}
     			else{
-    				//set_robot(CST_SPEED, -CST_SPEED);
-    				set_robot(STOP, STOP);
+    				set_robot(CST_SPEED, -CST_SPEED);
+    				//set_robot(STOP, STOP);
     			}
     		break;
 
     		case PURSUIT:
-    			dist_reached = get_dist_condition();
+    			//playMelody(IMPOSSIBLE_MISSION, ML_SIMPLE_PLAY, NULL);
+    			    			dist_reached = get_dist_condition();
     			if(dist_reached){
     				set_robot(STOP, STOP);
     				system_state = COMEBACK;
     			}
     			else{
     				speed = pi_regulator(get_distance_cm(), GOAL_DISTANCE);
-    				/*speed_correction = (get_line_position() - (IMAGE_BUFFER_SIZE/2));
+    				speed_correction = (get_line_position() - (IMAGE_BUFFER_SIZE/2));
     				if(abs(speed_correction) < ROTATION_THRESHOLD){
     					speed_correction = 0;
     				}
     				right_speed = speed - ROTATION_COEFF * speed_correction;
     				left_speed = speed + ROTATION_COEFF * speed_correction;
-    				set_robot(right_speed, left_speed);*/
-    				set_robot(speed, speed);
+    				set_robot(right_speed, left_speed);
+    				//set_robot(speed, speed);
     			}
     		break;
 
@@ -133,12 +145,13 @@ static THD_FUNCTION(PiRegulator, arg) {
     				origin_reached = get_origin_condition();
     				if(origin_reached){
     					set_robot(STOP, STOP);
-    					//system_state = TURN;
-    					//reset_odometry();
-    					//reset_pursuit();
+    					system_state = TURN;
+    					reset_map();
+    					reset_odometry();
+    					reset_pursuit();
     				}
     				else{
-    					set_robot(CST_SPEED, CST_SPEED);
+    					set_robot(2*CST_SPEED, 2*CST_SPEED);
     				}
     			}
     			else{

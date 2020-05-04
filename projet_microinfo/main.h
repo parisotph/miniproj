@@ -29,11 +29,13 @@ extern "C" {
 #define CST_SPEED               250
 #define PI                      3.141592654f
 #define POS_FACTOR              0.0065f
-#define TETA_FACTOR             0.002407f
-#define NEAR_ORIGIN             0.1f
+#define TETA_FACTOR             2452.830189f
+#define NEAR_ORIGIN             0.5f
 #define CAUGHT                  7.0f
 #define PERIMETER_RADIUS        30.0f
 #define ACHIEVE                 1
+#define R_FACTOR                2.65
+#define WAIT_TIME               4000
 
 enum etat {TURN, PURSUIT, COMEBACK};
 
