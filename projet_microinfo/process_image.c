@@ -10,6 +10,8 @@
 
 static float distance_cm = 0;
 static uint16_t line_position = IMAGE_BUFFER_SIZE/2;	//middle
+static uint8_t line_situation = 0;
+static uint8_t target_captured = 0;
 
 //semaphore
 static BSEMAPHORE_DECL(image_ready_sem, TRUE);
@@ -89,7 +91,6 @@ uint16_t extract_line_width(uint8_t *buffer){
 		last_width = width = (end - begin);
 		line_position = (begin + end)/2; //gives the line position.
 	}
-
 	//sets a maximum width or returns the measured width
 	if((PXTOCM/width) > MAX_DISTANCE){
 		return PXTOCM/MAX_DISTANCE;
@@ -169,6 +170,18 @@ float get_distance_cm(void){
 
 uint16_t get_line_position(void){
 	return line_position;
+}
+
+uint8_t get_line_situation(void){
+	return line_situation;
+}
+
+uint8_t get_target_situation(void){
+	return target_captured;
+}
+
+void reset_pursuit(void){
+	target_captured = 0;
 }
 
 void process_image_start(void){

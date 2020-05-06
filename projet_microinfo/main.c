@@ -15,10 +15,13 @@
 //#include <messagebus.h>
 #include <i2c_bus.h>
 
-#include <pi_regulator.h>
 #include <process_image.h>
 #include <odometry.h>
+#include "move.h"
 
+messagebus_t bus;
+MUTEX_DECL(bus_lock);
+CONDVAR_DECL(bus_condvar);
 
 void SendUint8ToComputer(uint8_t* data, uint16_t size) 
 {
@@ -26,6 +29,7 @@ void SendUint8ToComputer(uint8_t* data, uint16_t size)
 	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)&size, sizeof(uint16_t));
 	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)data, size);
 }
+
 
 static void serial_start(void)
 {
@@ -45,7 +49,7 @@ int main(void)
     halInit();
     chSysInit();
     mpu_init();
-
+    messagebus_init(&bus, &bus_lock, &bus_condvar);
     //starts the serial communication
     serial_start();
     i2c_start();
@@ -59,28 +63,18 @@ int main(void)
 	motors_init();
 	//odometry_start();
 	//messagebus_init(&bus, &bus_lock, &bus_condvar);
-
+	proximity_start();
 	//stars the threads for the pi regulator and the processing of the image
-	pi_regulator_start();
+	move_start();
 	process_image_start();
 	odometry_start();
 
 	VL53L0X_start();
-	//playMelodyStart();
+	playMelodyStart();
 	//move_start();
-
-	/** Inits the Inter Process Communication bus. */
-	/*messagebus_init(&bus, &bus_lock, &bus_condvar);
-
-	messagebus_topic_t *sensor_topic = messagebus_find_topic_blocking(&bus, "/sensor");
-	sensor_msg_t sensor_value;*/
-
     /* Infinite loop. */
     while (1) {
-    		//chThdSleepMilliseconds(10);
-    		//playMelody(IMPOSSIBLE_MISSION, ML_SIMPLE_PLAY, NULL);
     		chThdSleepMilliseconds(1000);
-
     }
 }
 
