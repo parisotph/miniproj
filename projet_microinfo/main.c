@@ -11,8 +11,6 @@
 #include <motors.h>
 #include <camera/po8030.h>
 #include <chprintf.h>
-//#include <VL53L0X.h>
-//#include <messagebus.h>
 #include <i2c_bus.h>
 
 #include <process_image.h>
@@ -61,31 +59,22 @@ int main(void)
 	po8030_start();
 	//inits the motors
 	motors_init();
-	//odometry_start();
 	//messagebus_init(&bus, &bus_lock, &bus_condvar);
-	proximity_start();
-	//stars the threads for the pi regulator and the processing of the image
-	move_start();
+
+	//starts all the threads
+	proximity_start();	// IR sensors
+	move_start();	// PI regulator
 	process_image_start();
 	odometry_start();
+	VL53L0X_start();		// ToF sensor
+	playMelodyStart();	// Speaker
 
-	VL53L0X_start();
-	playMelodyStart();
-	//move_start();
     /* Infinite loop. */
     while (1) {
     		chThdSleepMilliseconds(1000);
     }
 }
 
-/*int16_t get_right_speed(void){
-	return right_motor_speed;
-}
-
-int16_t get_left_speed(void){
-	return left_motor_speed;
-}
-*/
 #define STACK_CHK_GUARD 0xe2dee396
 uintptr_t __stack_chk_guard = STACK_CHK_GUARD;
 

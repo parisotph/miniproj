@@ -29,7 +29,7 @@ static int32_t r_pos=0, l_pos=0, last_r_pos=0, last_l_pos=0;
 /*********************************************PRIVATE FUNCTIONS***********************************************/
 //calculates the variation of angle of the robot and the distance traveled by the center robot
 static void variation_calcul(void){
-	//get the motors position (in steps)
+	//get the motors' position (in steps)
 	r_pos = right_motor_get_pos();
 	l_pos = left_motor_get_pos();
 	//we calculate the angle variation knowing it's proportional to the difference of the variation of steps
@@ -65,7 +65,7 @@ static void update_robot(void){
 }
 
 static void processProximity(void){
-	//get the values of ir sensors
+	//get the values of IR sensors
 	uint16_t value1, value2;
 	value1 = get_prox(IRA);
 	value2 = get_prox(IRB);
@@ -73,7 +73,7 @@ static void processProximity(void){
 	float mean;
 	mean = (value1+value2)/2;
 	if(mean > IR_MIN){
-		//if the intruder is close enough, the target is captured
+		//if the target is close enough, it is captured
 		target_captured = ACHIEVE;
 	}
 }
@@ -96,7 +96,7 @@ static THD_FUNCTION(Odometry, arg) {
     		//skip the first 500 ms
     		//test if the system is in PURSUIT state
 			if(state == PURSUIT){
-				//test if the robot is at the edge of perimeter
+				//test if the robot is at the edge of the perimeter
 				processProximity();
 				if(dist >= PERIMETER_RADIUS || target_captured == ACHIEVE){
 					//save the distance to origin, angle of the robot position and angle to align with origin
@@ -118,7 +118,7 @@ static THD_FUNCTION(Odometry, arg) {
 				if(teta >= turn_angle){
 					angle_reached = ACHIEVE;
 				}
-				//if the robot returned to origin
+				//if the robot  has returned to origin
 				if(dist >= distance){
 					origin_reached = ACHIEVE;
 				}
@@ -130,7 +130,7 @@ static THD_FUNCTION(Odometry, arg) {
 /*******************************************END PRIVATE FUNCTIONS********************************************/
 
 /*********************************************PUBLIC FUNCTIONS***********************************************/
-//proceed to a reset of the coordinate system
+//proceeds to a reset of the coordinate system
 void reset_map(void){
 	teta = 0;
 	xc = 0;
@@ -138,7 +138,7 @@ void reset_map(void){
 	dist = 0;
 }
 
-//proceed to a reset of the variables used during odometry
+//proceeds to a reset of the variables used during odometry
 void reset_odometry(void){
 	dc = 0;
 	dteta = 0;

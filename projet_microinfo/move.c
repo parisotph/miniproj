@@ -31,7 +31,7 @@ static void set_robot(int16_t right_speed, int16_t left_speed){
 	left_motor_set_speed(left_speed);
 }
 
-//calculaton of the speed with a PI regulator
+//calculation of the speed with a PI regulator
 static int16_t pi_regulator(float distance, float goal){
 	float error = 0;
 	float speed = 0;
@@ -42,7 +42,7 @@ static int16_t pi_regulator(float distance, float goal){
 	//this avoids to always move as we cannot exactly be where we want and 
 	//the camera is a bit noisy
 	if(fabs(error) < ERROR_THRESHOLD){
-			return 0;
+		return 0;
 	}
 	//if the intruder is closer than 10cm the robot still advance in order to reach it
 	if(error < 0){
@@ -67,6 +67,7 @@ static void error_invalid_state(void){
 	set_robot(STOP, STOP);
 }
 
+// move thread
 static THD_WORKING_AREA(waMove, 256);
 static THD_FUNCTION(Move, arg) {
 
@@ -75,7 +76,7 @@ static THD_FUNCTION(Move, arg) {
 
     systime_t time;
     int16_t speed, speed_correction, right_speed, left_speed;
-    uint16_t n=0;
+    uint16_t cnt = 0;
     uint16_t first_measure, second_measure;
     uint8_t dist_reached=0, angle_reached=0, origin_reached=0;
 
@@ -88,25 +89,25 @@ static THD_FUNCTION(Move, arg) {
     		case TURN:
     			if(first_measure < D_MAX){
     				//skip the first 500 ms beacause the first measurement by ToF is 0
-    				if(n == HALF_SECOND){
+    				if(cnt == HALF_SECOND){
     					//stop the robot in front of the intruder
     					set_robot(STOP, STOP);
     					//make a warning sound
     					playNote(NOTE_INTENSITY , NOTE_DURATION);
     					chThdSleepMilliseconds(WAIT_TIME);
     					second_measure = VL53L0X_get_dist_mm();
-    					//test if the object is still close to the robot
+    					//test if the object is still in the no-go zone
     					if(second_measure <= D_MAX){
     						//change the state
     						system_state = PURSUIT;
     					}
     					else{
-    						//turn the robot at constant speed
+    						//turn the robot at constant speed if the intruder has left
     						set_robot(CST_SPEED, -CST_SPEED);
     					}
     				}
     				else{
-    					n++;
+    					cnt++;
     				}
     			}
     			else{
@@ -163,7 +164,7 @@ static THD_FUNCTION(Move, arg) {
     		break;
 
     		default:
-    			//in default mode, we call error function
+    			//in default mode, we call error function, which stops the robot
     			error_invalid_state();
     		}
     		chThdSleepUntilWindowed(time, time + MS2ST(1));
