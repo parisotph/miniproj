@@ -24,6 +24,11 @@
 static uint8_t system_state = TURN;
 /*******************************************END GLOBAL VARIABLES**********************************************/
 
+//declaration of the bus
+messagebus_t bus1;
+MUTEX_DECL(bus1_lock);
+CONDVAR_DECL(bus1_condvar);
+
 /*********************************************PRIVATE FUNCTIONS***********************************************/
 //set the speeds of the motors
 static void set_robot(int16_t right_speed, int16_t left_speed){
@@ -76,20 +81,29 @@ static THD_FUNCTION(Move, arg) {
 
     systime_t time;
     int16_t speed, speed_correction, right_speed, left_speed;
+    //counter to skip the first 500ms
     uint16_t cnt = 0;
-    uint16_t first_measure, second_measure;
+    uint16_t first_measure, second_measure, edge_measure;
     uint8_t dist_reached=0, angle_reached=0, origin_reached=0;
+    /** Inits the Inter Process Communication bus. */
+   messagebus_init(&bus1, &bus1_lock, &bus1_condvar);
+   messagebus_topic_t *odm_topic = messagebus_find_topic_blocking(&bus1, "/odm");
+   odm_msg_t odm_values;
 
     while(1){
     		time = chVTGetSystemTime();
     		first_measure = VL53L0X_get_dist_mm();
+    		//wait for new values to be published
+    		messagebus_topic_wait(odm_topic, &odm_values, sizeof(odm_values));
+
     		//switch to control the FSM
     		switch(system_state){
 
     		case TURN:
-    			if(first_measure < D_MAX){
-    				//skip the first 500 ms beacause the first measurement by ToF is 0
-    				if(cnt == HALF_SECOND){
+    			//skip the first 500 ms beacause the first measurement by ToF is 0
+    			if(cnt == HALF_SECOND){
+    				//test if an intruder is close
+    				if(first_measure < D_MAX){
     					//stop the robot in front of the intruder
     					set_robot(STOP, STOP);
     					//make a warning sound
@@ -107,22 +121,34 @@ static THD_FUNCTION(Move, arg) {
     					}
     				}
     				else{
-    					cnt++;
+    					edge_measure = VL53L0X_get_dist_mm();
+    					//if an intruder is in the perimeter, emits a light warning
+    					if(edge_measure < EDGE){
+    						set_front_led(ON);
+    					}
+    					else{
+    						set_front_led(OFF);
+    					}
+    					//turn the robot at constant speed
+    					set_robot(CST_SPEED, -CST_SPEED);
     				}
     			}
     			else{
-    				//turn the robot at constant speed
-    				set_robot(CST_SPEED, -CST_SPEED);
+    				cnt++;
     			}
     		break;
 
     		case PURSUIT:
+    			//switches off front led
+    			set_front_led(OFF);
+    			//lights the body led if it's in PURSUIT mode
     			set_body_led(ON);
     			//test condition for distance
-    			dist_reached = get_dist_condition();
+    			dist_reached = odm_values.cd1;
     			if(dist_reached == ACHIEVE){
     				set_robot(STOP, STOP);
-    				system_state = COMEBACK;
+    				//makes a different sound depending on the situation
+					system_state = COMEBACK;
     			}
     			else{
     				//speed is given by the regulator
@@ -140,12 +166,13 @@ static THD_FUNCTION(Move, arg) {
     		break;
 
     		case COMEBACK:
+    			//switches off the body led
     			set_body_led(OFF);
     			//test condition for alignment with origin
-    			angle_reached = get_angle_condition();
+    			angle_reached = odm_values.cd2;
     			if(angle_reached == ACHIEVE){
     				//test condition for origin
-    				origin_reached = get_origin_condition();
+    				origin_reached = odm_values.cd3;
     				if(origin_reached == ACHIEVE){
     					set_robot(STOP, STOP);
     					//return to the beginning state

@@ -50,7 +50,9 @@ int main(void)
     messagebus_init(&bus, &bus_lock, &bus_condvar);
     //starts the serial communication
     serial_start();
+    //starts i2c bus
     i2c_start();
+    //starts the speaker
     dac_start();
     //start the USB communication
     usb_start();
@@ -59,18 +61,18 @@ int main(void)
 	po8030_start();
 	//inits the motors
 	motors_init();
-	//messagebus_init(&bus, &bus_lock, &bus_condvar);
-
 	//starts all the threads
-	proximity_start();	// IR sensors
-	move_start();	// PI regulator
-	process_image_start();
-	odometry_start();
-	VL53L0X_start();		// ToF sensor
-	playMelodyStart();	// Speaker
-
+	proximity_start();	     // IR sensors
+	move_start();	         // PI regulator
+	process_image_start();   // camera
+	odometry_start();        // odometry
+	VL53L0X_start();		 // ToF sensor
+	playMelodyStart();	     // Sound
+	uint16_t mesure;
     /* Infinite loop. */
     while (1) {
+    		mesure = VL53L0X_get_dist_mm();
+    		chprintf((BaseSequentialStream*)&SD3, "mesure = %d", mesure);
     		chThdSleepMilliseconds(1000);
     }
 }

@@ -17,6 +17,9 @@
 #include "msgbus/messagebus.h"
 #include "sensors/proximity.h"
 
+//for communication
+extern messagebus_t bus1;
+
 /*********************************************GLOBAL VARIABLES************************************************/
 //declaration of the coordinates of the robot and angle and distance useful variables
 static float teta=0, xc=0, yc=0, dteta=0, dc=0, dxc=0, dyc=0, dist=0, distance=0, phi=0, turn_angle=0;
@@ -24,6 +27,8 @@ static float teta=0, xc=0, yc=0, dteta=0, dc=0, dxc=0, dyc=0, dist=0, distance=0
 static uint8_t dist_reached=0, angle_reached=0, origin_reached=0, target_captured=0;
 //declaration of the variables using motor positions
 static int32_t r_pos=0, l_pos=0, last_r_pos=0, last_l_pos=0;
+//declaration of the message
+static odm_msg_t odm_values;
 /*******************************************END GLOBAL VARIABLES**********************************************/
 
 /*********************************************PRIVATE FUNCTIONS***********************************************/
@@ -87,13 +92,18 @@ static THD_FUNCTION(Odometry, arg) {
 
     systime_t time;
     uint8_t state;
+    // Declares the topic on the bus.
+    messagebus_topic_t odm_topic;
+    MUTEX_DECL(odm_topic_lock);
+    CONDVAR_DECL(odm_topic_condvar);
+    messagebus_topic_init(&odm_topic, &odm_topic_lock, &odm_topic_condvar, &odm_values, sizeof(odm_values));
+    messagebus_advertise_topic(&bus1, &odm_topic, "/odm");
 
     while(1){
     		time = chVTGetSystemTime();
     		state = get_system_state();
     		//calculates the variation of orientation and distance traveled
     		variation_calcul();
-    		//skip the first 500 ms
     		//test if the system is in PURSUIT state
 			if(state == PURSUIT){
 				//test if the robot is at the edge of the perimeter
@@ -123,6 +133,12 @@ static THD_FUNCTION(Odometry, arg) {
 					origin_reached = ACHIEVE;
 				}
 			}
+			odm_values.cd1 = dist_reached;
+			odm_values.cd2 = angle_reached;
+			odm_values.cd3 = origin_reached;
+			//odm_values.sound = sound;
+			/* Publishes it on the bus. */
+			messagebus_topic_publish(&odm_topic, &odm_values, sizeof(odm_values));
     		chThdSleepUntilWindowed(time, time + MS2ST(1));
     		//chThdSleepMilliseconds(1);
     }
@@ -157,18 +173,6 @@ void reset_odometry(void){
 
 void odometry_start(void){
 	chThdCreateStatic(waOdometry, sizeof(waOdometry), NORMALPRIO, Odometry, NULL);
-}
-
-uint8_t get_dist_condition(void){
-	return dist_reached;
-}
-
-uint8_t get_angle_condition(void){
-	return angle_reached;
-}
-
-uint8_t get_origin_condition(void){
-	return origin_reached;
 }
 /*******************************************END PUBLIC FUNCTIONS*********************************************/
 

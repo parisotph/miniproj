@@ -41,12 +41,12 @@ extern "C" {
 #define HALF_SECOND             500
 #define NOTE_INTENSITY          4
 #define NOTE_DURATION           200
-#define ON                   	2
+#define ON                   	1
 #define OFF                     0
 #define IRA						0
 #define IRB						7
 #define IR_MIN                  3000
-
+#define EDGE                    300
 
 enum etat {TURN, PURSUIT, COMEBACK};
 
