@@ -112,12 +112,9 @@ static THD_FUNCTION(Move, arg) {
     				chThdSleepMilliseconds(WAIT_TIME);
     				cnt3 = get_cnt3();
     				//test if the object is still in the no-go zone
-    				if(cnt3 >= LIMIT-1){
+    				if(cnt3 >= LIMIT){
     					//change the state
     					system_state = PURSUIT;
-    				}
-    				else{
-    					set_robot(CST_SPEED, -CST_SPEED);
     				}
     			}
     			else{
@@ -142,7 +139,7 @@ static THD_FUNCTION(Move, arg) {
     			dist_reached = odm_values.cd1;
     			if(dist_reached == ACHIEVE){
     				set_robot(STOP, STOP);
-    				//change state
+    				//change the state
 					system_state = COMEBACK;
     			}
     			else{
