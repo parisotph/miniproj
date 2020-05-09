@@ -28,10 +28,7 @@ int main(void)
     chSysInit();
     mpu_init();
     messagebus_init(&bus, &bus_lock, &bus_condvar);
-    //serial_start();          //starts the serial communication
-    //i2c_start();             //starts i2c bus
     dac_start();             //starts the speaker
-    //usb_start();             //start the USB communication
     dcmi_start();            //starts the camera
 	po8030_start();
 	motors_init();           //inits the motors
