@@ -11,11 +11,10 @@
 #include <math.h>
 #include <main.h>
 #include <odometry.h>
-#include <process_image.h>
 #include <motors.h>
 #include <move.h>
 #include "msgbus/messagebus.h"
-#include "sensors/proximity.h"
+#include <filter.h>
 
 //for communication
 extern messagebus_t bus1;
@@ -31,7 +30,7 @@ static int32_t r_pos=0, l_pos=0, last_r_pos=0, last_l_pos=0;
 static odm_msg_t odm_values;
 /*******************************************END GLOBAL VARIABLES**********************************************/
 
-/*********************************************PRIVATE FUNCTIONS***********************************************/
+/*********************************************INTERNAL FUNCTIONS**********************************************/
 //calculates the variation of angle of the robot and the distance traveled by the center robot
 static void variation_calcul(void){
 	//get the motors' position (in steps)
@@ -69,20 +68,6 @@ static void update_robot(void){
 	dist = sqrt(xc*xc + yc*yc);
 }
 
-static void processProximity(void){
-	//get the values of IR sensors
-	uint16_t value1, value2;
-	value1 = get_prox(IRA);
-	value2 = get_prox(IRB);
-	//performs an average
-	float mean;
-	mean = (value1+value2)/2;
-	if(mean > IR_MIN){
-		//if the target is close enough, it is captured
-		target_captured = ACHIEVE;
-	}
-}
-
 //odometry thread
 static THD_WORKING_AREA(waOdometry, 256);
 static THD_FUNCTION(Odometry, arg) {
@@ -92,7 +77,8 @@ static THD_FUNCTION(Odometry, arg) {
 
     systime_t time;
     uint8_t state;
-    // Declares the topic on the bus.
+    uint8_t cnt4;
+    //declares the topic on the bus
     messagebus_topic_t odm_topic;
     MUTEX_DECL(odm_topic_lock);
     CONDVAR_DECL(odm_topic_condvar);
@@ -104,24 +90,26 @@ static THD_FUNCTION(Odometry, arg) {
     		state = get_system_state();
     		//calculates the variation of orientation and distance traveled
     		variation_calcul();
-    		//test if the system is in PURSUIT state
 			if(state == PURSUIT){
-				//test if the robot is at the edge of the perimeter
-				processProximity();
+				//test if the robot is at the edge of the perimeter or if the target has been captured
 				if(dist >= PERIMETER_RADIUS || target_captured == ACHIEVE){
 					//save the distance to origin, angle of the robot position and angle to align with origin
 					phi = atan(yc/xc);
 					distance = dist;
-					turn_angle = PI + phi - teta;
+					turn_angle = PI + CORRECTION + phi - teta;
 					dist_reached = ACHIEVE;
-					//reset the coordinate system to avoids amplification of the error
+					//reset of the coordinate system to avoids amplification of the error
 					reset_map();
 				}
 				else{
+					cnt4 = get_cnt4();
+					//test if the robot nearly touch the target
+					if(cnt4 >= LIMIT){
+						target_captured = ACHIEVE;
+					}
 					update_robot();
 				}
 			}
-			//test if the robot is in COMEBACK state
 			if(state == COMEBACK){
 				update_robot();
 				//if the robot is aligned with origin
@@ -133,17 +121,16 @@ static THD_FUNCTION(Odometry, arg) {
 					origin_reached = ACHIEVE;
 				}
 			}
+			//stock conditions in the message
 			odm_values.cd1 = dist_reached;
 			odm_values.cd2 = angle_reached;
 			odm_values.cd3 = origin_reached;
-			//odm_values.sound = sound;
-			/* Publishes it on the bus. */
+			//publishes it on the bus
 			messagebus_topic_publish(&odm_topic, &odm_values, sizeof(odm_values));
     		chThdSleepUntilWindowed(time, time + MS2ST(1));
-    		//chThdSleepMilliseconds(1);
     }
 }
-/*******************************************END PRIVATE FUNCTIONS********************************************/
+/*******************************************END INTERNAL FUNCTIONS*******************************************/
 
 /*********************************************PUBLIC FUNCTIONS***********************************************/
 //proceeds to a reset of the coordinate system
@@ -166,6 +153,10 @@ void reset_odometry(void){
 	angle_reached = 0;
 	origin_reached = 0;
 	target_captured = 0;
+	r_pos = 0;
+	l_pos = 0;
+	last_r_pos = 0;
+	last_l_pos = 0;
 	//reset the steps counters
 	right_motor_set_pos(0);
 	left_motor_set_pos(0);

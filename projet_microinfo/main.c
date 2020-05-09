@@ -1,8 +1,8 @@
+/* Main file for the project */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-
 #include "ch.h"
 #include "hal.h"
 #include "memory_protection.h"
@@ -11,68 +11,41 @@
 #include <motors.h>
 #include <camera/po8030.h>
 #include <chprintf.h>
-#include <i2c_bus.h>
-
 #include <process_image.h>
 #include <odometry.h>
-#include "move.h"
+#include <move.h>
+#include <filter.h>
 
+//define the bus to receive measurements from the IR sensors
 messagebus_t bus;
 MUTEX_DECL(bus_lock);
 CONDVAR_DECL(bus_condvar);
 
-void SendUint8ToComputer(uint8_t* data, uint16_t size) 
-{
-	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)"START", 5);
-	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)&size, sizeof(uint16_t));
-	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)data, size);
-}
-
-
-static void serial_start(void)
-{
-	static SerialConfig ser_cfg = {
-	    115200,
-	    0,
-	    0,
-	    0,
-	};
-
-	sdStart(&SD3, &ser_cfg); // UART3.
-}
-
 int main(void)
 {
-
+/***********************************************MAIN INITIALIZATIONS***********************************************/
     halInit();
     chSysInit();
     mpu_init();
     messagebus_init(&bus, &bus_lock, &bus_condvar);
-    //starts the serial communication
-    serial_start();
-    //starts i2c bus
-    i2c_start();
-    //starts the speaker
-    dac_start();
-    //start the USB communication
-    usb_start();
-    //starts the camera
-    dcmi_start();
+    //serial_start();          //starts the serial communication
+    //i2c_start();             //starts i2c bus
+    dac_start();             //starts the speaker
+    //usb_start();             //start the USB communication
+    dcmi_start();            //starts the camera
 	po8030_start();
-	//inits the motors
-	motors_init();
-	//starts all the threads
+	motors_init();           //inits the motors
+/**********************************************THREADS INITIALIZATIONS**********************************************/
 	proximity_start();	     // IR sensors
 	move_start();	         // PI regulator
 	process_image_start();   // camera
 	odometry_start();        // odometry
 	VL53L0X_start();		 // ToF sensor
 	playMelodyStart();	     // Sound
-	uint16_t mesure;
+	filter_start();          //filter
+
     /* Infinite loop. */
     while (1) {
-    		mesure = VL53L0X_get_dist_mm();
-    		chprintf((BaseSequentialStream*)&SD3, "mesure = %d", mesure);
     		chThdSleepMilliseconds(1000);
     }
 }

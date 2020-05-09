@@ -2,25 +2,24 @@
 #include "hal.h"
 #include <chprintf.h>
 #include <usbcfg.h>
-
 #include <main.h>
 #include <camera/po8030.h>
-
 #include <process_image.h>
 
+/*********************************************GLOBAL VARIABLES************************************************/
+//for the distance robot/target in cm
 static float distance_cm = 0;
-static uint16_t line_position = IMAGE_BUFFER_SIZE/2;	//middle
-static uint8_t line_situation = 0;
-static uint8_t target_captured = 0;
+//initialization of the line position at the middle of the buffer
+static uint16_t line_position = IMAGE_BUFFER_SIZE/2;
+/*******************************************END GLOBAL VARIABLES**********************************************/
 
 //semaphore
 static BSEMAPHORE_DECL(image_ready_sem, TRUE);
 
-/*
- *  Returns the line's width extracted from the image buffer given
- *  Returns 0 if line not found
- */
-uint16_t extract_line_width(uint8_t *buffer){
+/*********************************************INTERNAL FUNCTIONS**********************************************/
+//returns the line's width extracted from the image buffer given
+//returns 0 if line not found
+static uint16_t extract_line_width(uint8_t *buffer){
 
 	uint16_t i = 0, begin = 0, end = 0, width = 0;
 	uint8_t stop = 0, wrong_line = 0, line_not_found = 0;
@@ -132,8 +131,6 @@ static THD_FUNCTION(ProcessImage, arg) {
 	uint8_t image[IMAGE_BUFFER_SIZE] = {0};
 	uint16_t lineWidth = 0;
 
-	bool send_to_computer = true;
-
     while(1){
     	//waits until an image has been captured
         chBSemWait(&image_ready_sem);
@@ -150,20 +147,16 @@ static THD_FUNCTION(ProcessImage, arg) {
 		//search for a line in the image and gets its width in pixels
 		lineWidth = extract_line_width(image);
 
-		//converts the width into a distance between the robot and the camera
+		//converts the width into a distance between the target and the camera
 		if(lineWidth){
 			distance_cm = PXTOCM/lineWidth;
 		}
-
-		if(send_to_computer){
-			//sends to the computer the image
-			SendUint8ToComputer(image, IMAGE_BUFFER_SIZE);
-		}
-		//invert the bool
-		send_to_computer = !send_to_computer;
     }
 }
+/*******************************************END INTERNAL FUNCTIONS*******************************************/
 
+/*********************************************PUBLIC FUNCTIONS***********************************************/
+//functions to transmit line position and distance
 float get_distance_cm(void){
 	return distance_cm;
 }
@@ -172,19 +165,8 @@ uint16_t get_line_position(void){
 	return line_position;
 }
 
-uint8_t get_line_situation(void){
-	return line_situation;
-}
-
-uint8_t get_target_situation(void){
-	return target_captured;
-}
-
-void reset_pursuit(void){
-	target_captured = 0;
-}
-
 void process_image_start(void){
 	chThdCreateStatic(waProcessImage, sizeof(waProcessImage), NORMALPRIO, ProcessImage, NULL);
 	chThdCreateStatic(waCaptureImage, sizeof(waCaptureImage), NORMALPRIO, CaptureImage, NULL);
 }
+/*******************************************END PUBLIC FUNCTIONS*********************************************/

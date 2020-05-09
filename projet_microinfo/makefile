@@ -13,6 +13,7 @@ CSRC += ./main.c \
 		./move.c \
 		./process_image.c \
 		./odometry.c \
+		./filter.c \
 
 
 #Header folders to include

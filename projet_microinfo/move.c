@@ -13,11 +13,11 @@
 #include <motors.h>
 #include <process_image.h>
 #include <odometry.h>
-#include "sensors/VL53L0X/VL53L0X.h"
 #include "audio/play_melody.h"
 #include <move.h>
 #include "msgbus/messagebus.h"
 #include <leds.h>
+#include <filter.h>
 
 /*********************************************GLOBAL VARIABLES************************************************/
 //declaration of the system state and initialization in TURN mode
@@ -29,7 +29,7 @@ messagebus_t bus1;
 MUTEX_DECL(bus1_lock);
 CONDVAR_DECL(bus1_condvar);
 
-/*********************************************PRIVATE FUNCTIONS***********************************************/
+/*********************************************INTERNAL FUNCTIONS**********************************************/
 //set the speeds of the motors
 static void set_robot(int16_t right_speed, int16_t left_speed){
 	right_motor_set_speed(right_speed);
@@ -51,7 +51,7 @@ static int16_t pi_regulator(float distance, float goal){
 	}
 	//if the intruder is closer than 10cm the robot still advance in order to reach it
 	if(error < 0){
-		return (2*CST_SPEED);
+		return (3*CST_SPEED);
 	}
 	//computation of the sum of error
 	sum_error += error;
@@ -82,8 +82,8 @@ static THD_FUNCTION(Move, arg) {
     systime_t time;
     int16_t speed, speed_correction, right_speed, left_speed;
     //counter to skip the first 500ms
-    uint16_t cnt = 0;
-    uint16_t first_measure, second_measure, edge_measure;
+    uint8_t cnt1, cnt2, cnt3;
+    //uint16_t first_measure, second_measure, edge_measure;
     uint8_t dist_reached=0, angle_reached=0, origin_reached=0;
     /** Inits the Inter Process Communication bus. */
    messagebus_init(&bus1, &bus1_lock, &bus1_condvar);
@@ -92,7 +92,6 @@ static THD_FUNCTION(Move, arg) {
 
     while(1){
     		time = chVTGetSystemTime();
-    		first_measure = VL53L0X_get_dist_mm();
     		//wait for new values to be published
     		messagebus_topic_wait(odm_topic, &odm_values, sizeof(odm_values));
 
@@ -100,41 +99,37 @@ static THD_FUNCTION(Move, arg) {
     		switch(system_state){
 
     		case TURN:
-    			//skip the first 500 ms beacause the first measurement by ToF is 0
-    			if(cnt == HALF_SECOND){
-    				//test if an intruder is close
-    				if(first_measure < D_MAX){
-    					//stop the robot in front of the intruder
-    					set_robot(STOP, STOP);
-    					//make a warning sound
-    					playNote(NOTE_INTENSITY , NOTE_DURATION);
-    					chThdSleepMilliseconds(WAIT_TIME);
-    					second_measure = VL53L0X_get_dist_mm();
-    					//test if the object is still in the no-go zone
-    					if(second_measure <= D_MAX){
-    						//change the state
-    						system_state = PURSUIT;
-    					}
-    					else{
-    						//turn the robot at constant speed if the intruder has left
-    						set_robot(CST_SPEED, -CST_SPEED);
-    					}
+    			//test if an intruder is close
+    			cnt1 = get_cnt1();
+    			if(cnt1 >= LIMIT){
+    				//stop the robot in front of the intruder
+    				set_robot(STOP, STOP);
+    				//lights the front LED
+    				set_front_led(ON);
+    				//makes a warning sound
+    				playNote(NOTE_INTENSITY , NOTE_DURATION);
+    				//waits 2.5 seconds
+    				chThdSleepMilliseconds(WAIT_TIME);
+    				cnt3 = get_cnt3();
+    				//test if the object is still in the no-go zone
+    				if(cnt3 >= LIMIT-1){
+    					//change the state
+    					system_state = PURSUIT;
     				}
     				else{
-    					edge_measure = VL53L0X_get_dist_mm();
-    					//if an intruder is in the perimeter, emits a light warning
-    					if(edge_measure < EDGE){
-    						set_front_led(ON);
-    					}
-    					else{
-    						set_front_led(OFF);
-    					}
-    					//turn the robot at constant speed
     					set_robot(CST_SPEED, -CST_SPEED);
     				}
     			}
     			else{
-    				cnt++;
+    				cnt2 = get_cnt2();
+    				//if an intruder is in the perimeter, emits a light warning
+    				if(cnt2 >= LIMIT){
+    					set_front_led(ON);
+    				}
+    				else{
+    					set_front_led(OFF);
+    				}
+    				set_robot(CST_SPEED, -CST_SPEED);
     			}
     		break;
 
@@ -147,7 +142,7 @@ static THD_FUNCTION(Move, arg) {
     			dist_reached = odm_values.cd1;
     			if(dist_reached == ACHIEVE){
     				set_robot(STOP, STOP);
-    				//makes a different sound depending on the situation
+    				//change state
 					system_state = COMEBACK;
     			}
     			else{
@@ -197,7 +192,7 @@ static THD_FUNCTION(Move, arg) {
     		chThdSleepUntilWindowed(time, time + MS2ST(1));
     }
 }
-/*******************************************END PRIVATE FUNCTIONS********************************************/
+/*******************************************END INTERNAL FUNCTIONS*******************************************/
 
 /*********************************************PUBLIC FUNCTIONS***********************************************/
 void move_start(void){
