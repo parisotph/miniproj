@@ -32,7 +32,7 @@ extern "C" {
 #define STOP                    0                             //[step/s] to stop the robot
 #define CST_SPEED               250                           //[step/s] all the constant speed are multiple of this speed in the project
 #define PI                      3.141592654f                  //pi
-#define CORRECTION				0.1f                        //[rad] correction of the angle of alignment
+#define CORRECTION				0.081f                        //[rad] correction of the angle of alignment
 #define POS_FACTOR              0.0065f                       //[cm/step] factor for the distance traveled
 #define TETA_FACTOR             0.002453f                     //[rad/step] factor for the robot orientation
 #define PERIMETER_RADIUS        43.0f                         //[cm] radius of the demarcated zone
